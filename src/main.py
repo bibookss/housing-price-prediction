@@ -18,6 +18,23 @@ def sum_of_squared_residuals(df, x_label, y_label, slope, intercept):
 def mean_squared_error(sum, n):
     return sum / n
 
+def closed_form_solution(df, x_label, y_label):
+    x = df[x_label]
+    y = df[y_label]
+    n = len(df)
+    
+    # Solve for m
+    sum_x = x.sum()
+    sum_y = y.sum()
+    sum_xy = (x * y).sum()
+    sum_x_squared = (x ** 2).sum()
+    m = (n * sum_xy - sum_x * sum_y) / (n * sum_x_squared - sum_x ** 2)
+
+    # Solve for b
+    b = (sum_y - m * sum_x) / n
+
+    return m, b
+
 def plot_chart(x_label, y_label, df, slope, intercept):
     plt.figure(figsize=(8, 6))
     plt.title(f'{y_label} vs {x_label}')
@@ -52,6 +69,13 @@ def preprocess(df):
     df['TransactionDate'] = df['TransactionDate'].astype(str).str.split('.').str[0].astype(int)
     return df
 
+def reset():
+    st.session_state.slope = 1.0
+    st.session_state.intercept = 1.0
+
+def compute():
+    st.session_state.slope, st.session_state.intercept = closed_form_solution(df, features, target)
+
 if __name__ == '__main__':
     # Load data
     df = load_data()
@@ -67,14 +91,14 @@ if __name__ == '__main__':
     st.subheader('Using Univariate Linear Regression')
 
     # Get user input by slider for slope and intercept
-    slope = st.slider('Slope', min_value=-50.0, max_value=50.0, value=1.0, step=0.1)
-    intercept = st.slider('Intercept', min_value=0.0, max_value=100.0, value=1.0, step=0.1)
+    slope = st.slider('Slope', min_value=-50.0, max_value=50.0, step=0.1, key='slope')
+    intercept = st.slider('Intercept', min_value=0.0, max_value=100.0, step=0.1, key='intercept')
 
     # Write the cost function (mean squared error)
     sum = sum_of_squared_residuals(df, features, target, slope, intercept)
     n = len(df)
     cost = mean_squared_error(sum, n)
-    st.markdown(f'Cost: {cost}')
+    st.markdown(f'#### Cost: {cost}')
 
     # Add reset and calculate button
     st.markdown("""
@@ -90,16 +114,12 @@ if __name__ == '__main__':
             """, unsafe_allow_html=True)
 
     col1, col2 = st.columns([1,1])
-    reset = col1.button('Reset')
-    calculate = col2.button('Calculate')
-
-    if reset:
-        st.write('Resetting...')
-        slope = 1.0
-        intercept = 1.0
+    reset = col1.button('Reset', on_click=reset)
+    calculate = col2.button('Calculate', on_click=compute)
 
     if calculate:
-        st.write('Calculating...')
+        st.markdown(f'#### Slope: {st.session_state.slope}')
+        st.markdown(f'#### Intercept: {st.session_state.intercept}')
         
     # Plot chart
     plot_chart(features, target, df, slope, intercept)
