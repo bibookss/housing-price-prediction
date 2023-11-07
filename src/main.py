@@ -3,6 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import seaborn as sns
 import os
+import numpy as np
 
 def find_y(x, m, b):
     y = m * x + b
@@ -35,13 +36,21 @@ def closed_form_solution(df, x_label, y_label):
 
     return m, b
 
-def plot_chart(x_label, y_label, df, slope, intercept):
+def correlation_coefficient(df, x_label, y_label):
+    x = df[x_label]
+    y = df[y_label]
+    correlation_matrix = np.corrcoef(x, y)
+    correlation_coefficient = correlation_matrix[0, 1]
+    return correlation_coefficient
+
+
+def plot_chart(x_label, y_label, df, slope, intercept, x_lim=None, y_lim=None):
     plt.figure(figsize=(8, 6))
     plt.title(f'{y_label} vs {x_label}')
     sns.scatterplot(x=x_label, y=y_label, data=df, s=20)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    
+
     lineStart = -5
     lineEnd = df[x_label].max()
 
@@ -50,10 +59,14 @@ def plot_chart(x_label, y_label, df, slope, intercept):
 
     plt.plot(x, y, 'r-', linewidth=2)
 
-    plt.xlim(lineStart, lineEnd)
-    plt.ylim(-5, df[y_label].max())
+    if x_lim is not None:
+        plt.xlim(x_lim[0], x_lim[1])
+
+    if y_lim is not None:
+        plt.ylim(y_lim[0], y_lim[1])
 
     st.pyplot(plt)
+
 
 def load_data():
     # Load data
@@ -61,6 +74,9 @@ def load_data():
     columns = ['TransactionDate', 'HouseAge', 'DistanceToNearestMRTStation', 'NumberConvenienceStores', 'Latitude', 'Longitude', 'PriceOfUnitArea']
     df = pd.read_csv(data_path, names=columns)
     preprocess(df)
+
+    print(df['TransactionDate'].min())
+    print(df['TransactionDate'].max())
 
     return df
 
@@ -120,6 +136,7 @@ if __name__ == '__main__':
     if calculate:
         st.markdown(f'#### Slope: {st.session_state.slope}')
         st.markdown(f'#### Intercept: {st.session_state.intercept}')
+        st.markdown(f'#### Correlation Coefficient: {correlation_coefficient(df, features, target)}')
         
     # Plot chart
     plot_chart(features, target, df, slope, intercept)
